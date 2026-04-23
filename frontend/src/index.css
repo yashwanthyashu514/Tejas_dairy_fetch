@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Sora:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #FAFAF5;
+  --cream-dark: #F0EBE0;
+  --border: #E8E0D0;
+  --navy: #0D1B2A;
+  --gold: #C8891C;
+  --gold-pale: #FDF3E0;
+  --sage: #166B4D;
+  --sage-pale: #F0F7F3;
+  --red: #991B1B;
+  --red-pale: #FEF2F2;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Sora', system-ui, sans-serif;
+  background-color: var(--cream);
+  color: var(--navy);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4C9B5;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* ── Date input ── */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+/* ── Premium input focus ── */
+.input-premium {
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.input-premium:focus-within {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(200, 137, 28, 0.12);
+  background: #fff !important;
+}
+
+/* ── Number field ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.3;
+}
+
+/* ── Card hover ── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(9, 22, 41, 0.1);
+}
+
+/* ── Soft gradient text ── */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #C8891C 0%, #E3A32E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Amount display ── */
+.font-amount {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Subtle dot grid bg ── */
+.bg-dot-grid {
+  background-image: radial-gradient(circle, #D4C9B5 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ── Table row hover ── */
+.tr-hover {
+  transition: background 0.15s ease;
+}
+
+.tr-hover:hover {
+  background-color: #FDF8EC;
+}
+
+/* ── Prevent content going under fixed header ── */
+.page-content {
+  padding-top: 0;
+}
+
+/* ── Modal always on top ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 22, 41, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 16px;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 22px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #E8E0D0;
+  box-shadow: 0 24px 60px rgba(9, 22, 41, 0.3);
+  z-index: 10000;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-navy-900 text-cream-100 text-sm font-semibold tracking-wide transition-all duration-200 hover:bg-navy-800 shadow-navy active:scale-[0.98];
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gold-500 text-white text-sm font-semibold tracking-wide transition-all duration-200 hover:bg-gold-600 shadow-gold active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#E8E0D0] text-navy-700 bg-white text-xs font-semibold tracking-wide transition-all duration-200 hover:bg-cream-200 hover:border-[#D4C9B5] active:scale-[0.98];
+  }
+
+  .label-xs {
+    @apply text-[10px] font-semibold uppercase tracking-widest text-navy-400;
+  }
+
+  .card-base {
+    @apply bg-white rounded-3xl border border-[#E8E0D0] shadow-card;
+  }
+}

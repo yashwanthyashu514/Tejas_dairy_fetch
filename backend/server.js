@@ -90,6 +90,15 @@ app.use("/api/owner/login", authLimiter);
 ────────────────────────────────── */
 app.use("/api/owner", router);
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Tejas Dairy API is running 🚀",
+    version: "1.0.0",
+    routes: "/api/owner/*",
+  });
+});
+
 app.get("/health", (req, res) => {
   res.json({
     success: true,

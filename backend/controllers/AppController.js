@@ -4,6 +4,23 @@ import ClientModel from "../models/ClientModel.js";
 import CollectionEntry from "../models/CollectionEntryModel.js";
 
 /* ─────────────────────────────────────────
+   Profile
+───────────────────────────────────────── */
+export const getOwnerProfile = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      data: {
+        email: process.env.OWNER_EMAIL,
+        name: "Tejas Dairy Owner",
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
+/* ─────────────────────────────────────────
    Auth
 ───────────────────────────────────────── */
 export const loginOwner = async (req, res) => {

@@ -2,6 +2,7 @@ import express from "express";
 import { verifyToken } from "../middleware/UserAuth.js";
 import {
   loginOwner,
+  getOwnerProfile,
   createClient,
   getAllClients,
   searchClients,
@@ -22,7 +23,8 @@ router.post("/login", loginOwner);
 /* ── Protected ── */
 router.use(verifyToken); // All routes below require auth
 
-// Clients
+// Owner profile (used by frontend token validation)
+router.get("/profile", getOwnerProfile);
 router.post("/add-clients", createClient);
 router.get("/clients", getAllClients);
 router.get("/search-clients", searchClients);

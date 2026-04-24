@@ -478,54 +478,7 @@ const CollectionEntry = ({ selectedClient, onSave }) => {
         </div>
       </div>
 
-      {/* Input Mode Toggle */}
-      <div className="flex bg-[#F7F4EF] rounded-[14px] p-2 mb-4 border border-[#E8E0D0] gap-2 items-center">
-        <div className="flex-1 flex gap-1">
-          <button
-            onClick={() => setInputMode("manual")}
-            disabled={isLoading}
-            className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-              inputMode === "manual" ? "bg-[#0D1B2A] text-white shadow-sm" : "text-[#8A9BB0] hover:text-[#0D1B2A]"
-            }`}
-          >
-            Manual Entry
-          </button>
-          <button
-            onClick={() => setInputMode("auto")}
-            disabled={isLoading}
-            className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-              inputMode === "auto" ? "bg-[#166B4D] text-white shadow-sm" : "text-[#8A9BB0] hover:text-[#166B4D]"
-            }`}
-          >
-            Auto (Analyzer)
-          </button>
-        </div>
-      </div>
 
-      {inputMode === "auto" && (
-        <motion.div initial={{opacity:0, height:0}} animate={{opacity:1, height:"auto"}} className="mb-4">
-          <div className="bg-[#F0F7F3] border border-[#B5DDCA] rounded-[14px] p-4 text-center shadow-inner">
-             {!serialConnected ? (
-                <div className="flex flex-col items-center gap-2.5">
-                  <Cpu size={24} color="#166B4D" />
-                  <div className="text-[11px] text-[#166B4D] font-bold tracking-wide">Connect Essae MA-815 via COM Port</div>
-                  <button onClick={handleConnectAnalyzer} className="bg-[#166B4D] text-white text-[10px] tracking-widest font-black px-5 py-2.5 rounded-[9px] mt-1 cursor-pointer hover:bg-[#11503A] transition-colors shadow-sm">
-                    AUTHORIZE MACHINE PORT
-                  </button>
-                </div>
-             ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <MonitorSmartphone size={24} color="#166B4D" className="animate-pulse" />
-                  <div className="text-[11px] text-[#166B4D] font-black uppercase tracking-widest">Live Sync Active</div>
-                  <div className="text-[10px] text-[#166B4D]/70 font-mono bg-white px-3 py-1 rounded-md border border-[#B5DDCA]/50 inline-block">{machineStatus}</div>
-                  <button onClick={handleDisconnectAnalyzer} className="text-[#991B1B] bg-[#FEF2F2] border border-[#FECACA] text-[9px] font-black tracking-widest px-4 py-1.5 rounded-lg mt-1 cursor-pointer transition-colors hover:bg-red-100">
-                    DISCONNECT
-                  </button>
-                </div>
-             )}
-          </div>
-        </motion.div>
-      )}
 
       {/* Inputs Grid */}
       <div className="grid grid-cols-3 gap-2.5 mb-4">
@@ -541,7 +494,6 @@ const CollectionEntry = ({ selectedClient, onSave }) => {
           label="Fat %"
           value={fat}
           onChange={(e) => setFat(e.target.value)}
-          readOnly={serialConnected && inputMode === "auto"}
           disabled={isLoading}
           suffix="%"
           placeholder="0.0"
@@ -550,7 +502,6 @@ const CollectionEntry = ({ selectedClient, onSave }) => {
           label="SNF %"
           value={snf}
           onChange={(e) => setSnf(e.target.value)}
-          readOnly={serialConnected && inputMode === "auto"}
           disabled={isLoading}
           suffix="%"
           placeholder="0.0"

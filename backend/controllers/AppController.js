@@ -183,6 +183,22 @@ export const searchClients = async (req, res) => {
   }
 };
 
+export const deleteClient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await ClientModel.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ success: false, message: "Client not found." });
+    
+    // Also delete associated entries? Yes, probably best to clean up.
+    await CollectionEntry.deleteMany({ clientId: id });
+
+    return res.status(200).json({ success: true, message: "Client deleted." });
+  } catch (err) {
+    console.error("[deleteClient]", err.message);
+    return res.status(500).json({ success: false, message: "Failed to delete client." });
+  }
+};
+
 /* ─────────────────────────────────────────
    Collection Entries
 ───────────────────────────────────────── */
@@ -300,6 +316,47 @@ export const getAllEntries = async (req, res) => {
       .json({ success: false, message: "Failed to fetch entries." });
   }
 };
+
+export const updateCollectionEntry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ltrs, fat, snf, rate } = req.body;
+    
+    const entry = await CollectionEntry.findById(id);
+    if (!entry) return res.status(404).json({ success: false, message: "Entry not found." });
+
+    const newLtrs = ltrs !== undefined ? parseFloat(ltrs) : entry.ltrs;
+    const newRate = rate !== undefined ? parseFloat(rate) : entry.rate;
+    const computedAmount = parseFloat((newLtrs * newRate).toFixed(2));
+
+    entry.ltrs = newLtrs;
+    entry.kgs = newLtrs;
+    entry.fat = fat !== undefined ? parseFloat(fat) : entry.fat;
+    entry.snf = snf !== undefined ? parseFloat(snf) : entry.snf;
+    entry.rate = newRate;
+    entry.amount = computedAmount;
+
+    await entry.save();
+
+    return res.status(200).json({ success: true, message: "Entry updated.", data: entry });
+  } catch (err) {
+    console.error("[updateCollectionEntry]", err.message);
+    return res.status(500).json({ success: false, message: "Server error updating entry." });
+  }
+};
+
+export const deleteCollectionEntry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await CollectionEntry.findByIdAndDelete(id);
+    if (!deleted) return res.status(404).json({ success: false, message: "Entry not found." });
+    return res.status(200).json({ success: true, message: "Entry deleted." });
+  } catch (err) {
+    console.error("[deleteCollectionEntry]", err.message);
+    return res.status(500).json({ success: false, message: "Server error deleting entry." });
+  }
+};
+
 
 export const markEntriesPaid = async (req, res) => {
   try {

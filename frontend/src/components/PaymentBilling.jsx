@@ -10,6 +10,8 @@ import {
   MessageCircle,
   Droplets,
   Calendar,
+  Edit2,
+  Check,
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 
@@ -220,10 +222,6 @@ const buildPDF = async (
   doc.setFont("courier", "normal");
   doc.text(String(client?.name || "N/A").toUpperCase(), MARGIN + 35, y);
 
-  doc.setFont("courier", "bold");
-  doc.text("STATUS   :", PAGE_W / 2 + 10, y);
-  doc.setFont("courier", "normal");
-  doc.text(allPaid ? "PAID" : "PENDING", PAGE_W / 2 + 35, y);
 
   y += 6;
   doc.setFont("courier", "bold");
@@ -397,8 +395,7 @@ const buildWhatsAppMsg = (
   `Total Litres : ${totalVolume.toFixed(2)} L\n` +
   `Average FAT  : ${avgFat.toFixed(2)} %\n` +
   `Average SNF  : ${avgSnf.toFixed(2)} %\n` +
-  `*Net Amount  : Rs. ${totalAmount.toFixed(2)}*\n` +
-  `Status       : ${allPaid ? "PAID" : "PENDING"}\n\n` +
+  `*Net Amount  : Rs. ${totalAmount.toFixed(2)}*\n\n` +
   `Please find the detailed PDF bill attached.`;
 
 /* ─────────────────────────────────────────────
@@ -427,7 +424,6 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
   const { axios, apiRequest, toast } = useAppContext();
   const initialCycle = getDairyCycle();
 
-  const [dateMode, setDateMode] = useState("TEN_DAYS");
   const [from, setFrom] = useState(initialCycle.from);
   const [to, setTo] = useState(initialCycle.to);
   const [ledgerEntries, setLedgerEntries] = useState([]);
@@ -437,12 +433,45 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isWhatsApping, setIsWhatsApping] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editForm, setEditForm] = useState({ ltrs: "", fat: "", snf: "", rate: "" });
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleTenDays = () => {
-    setDateMode("TEN_DAYS");
-    const { from: f, to: t } = getDairyCycle();
-    setFrom(f);
-    setTo(t);
+  const handleEditClick = (entry) => {
+    setEditingEntry(entry._id || entry.id);
+    setEditForm({
+      ltrs: entry.ltrs,
+      fat: entry.fat,
+      snf: entry.snf,
+      rate: entry.rate,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingEntry) return;
+    setIsUpdating(true);
+    try {
+      const res = await apiRequest("PUT", `/api/owner/entries/${editingEntry}`, editForm);
+      if (res.success) {
+        toast.success("Entry updated!");
+        setEditingEntry(null);
+        setLedgerEntries((prev) =>
+          prev.map((e) =>
+            (e._id === editingEntry || e.id === editingEntry)
+              ? { ...e, ...res.data }
+              : e
+          )
+        );
+      }
+    } catch (err) {
+      toast.error("Failed to update entry.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   // ✅ Auto-refresh ledger when a new global entry is saved (tracked by entries.length)
@@ -678,91 +707,34 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex bg-[#f0f0f0] rounded-lg p-0.5 border border-[#e0e0e0]">
-              <button
-                onClick={handleTenDays}
-                className={`px-3 py-1.5 rounded-md text-[9px] font-mono font-black uppercase tracking-widest transition-all ${
-                  dateMode === "TEN_DAYS"
-                    ? "bg-[#111] text-white shadow-sm"
-                    : "text-[#888] hover:text-[#333]"
-                }`}
-              >
-                Cycle
-              </button>
-              <button
-                onClick={() => setDateMode("CUSTOM")}
-                className={`px-3 py-1.5 rounded-md text-[9px] font-mono font-black uppercase tracking-widest transition-all ${
-                  dateMode === "CUSTOM"
-                    ? "bg-[#111] text-white shadow-sm"
-                    : "text-[#888] hover:text-[#333]"
-                }`}
-              >
-                Custom
-              </button>
-            </div>
-
-            {selectedClient && totalAmount > 0 && (
-              <div
-                className={`px-2.5 py-1 rounded-full text-[8px] font-mono font-black uppercase tracking-widest border ${
-                  allPaid
-                    ? "bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]"
-                    : "bg-[#fffbeb] text-[#b45309] border-[#fde68a]"
-                }`}
-              >
-                {allPaid ? "● Paid" : "● Pending"}
-              </div>
-            )}
-          </div>
         </div>
 
-        <AnimatePresence>
-          {dateMode === "CUSTOM" && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden border-b border-[#e8e8e8] bg-white"
-            >
-              <div className="flex gap-4 px-4 py-3">
-                <div className="flex-1">
-                  <label className="block text-[8px] font-mono font-black uppercase tracking-widest text-[#aaa] mb-1.5">
-                    From Date
-                  </label>
-                  <input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="w-full border border-[#ddd] rounded-lg px-3 py-2 text-[11px] font-mono text-[#222] outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all bg-[#fafafa]"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[8px] font-mono font-black uppercase tracking-widest text-[#aaa] mb-1.5">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="w-full border border-[#ddd] rounded-lg px-3 py-2 text-[11px] font-mono text-[#222] outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all bg-[#fafafa]"
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {dateMode === "TEN_DAYS" && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-[#f7f7f7] border-b border-[#e8e8e8] shrink-0">
-            <Calendar size={10} className="text-[#aaa]" />
-            <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#999]">
-              Period:
-            </span>
-            <span className="text-[9px] font-mono font-black text-[#444] uppercase tracking-wider">
-              {formatDate(from)} — {formatDate(to)}
-            </span>
+        <div className="border-b border-[#e8e8e8] bg-white">
+          <div className="flex gap-4 px-4 py-3">
+            <div className="flex-1">
+              <label className="block text-[8px] font-mono font-black uppercase tracking-widest text-[#aaa] mb-1.5">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="w-full border border-[#ddd] rounded-lg px-3 py-2 text-[11px] font-mono text-[#222] outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all bg-[#fafafa]"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-[8px] font-mono font-black uppercase tracking-widest text-[#aaa] mb-1.5">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="w-full border border-[#ddd] rounded-lg px-3 py-2 text-[11px] font-mono text-[#222] outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all bg-[#fafafa]"
+              />
+            </div>
           </div>
-        )}
+        </div>
 
         <div className="flex-1 overflow-x-auto relative">
           <table className="w-full text-left min-w-[520px]">
@@ -776,6 +748,7 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
                   { label: "SNF %" },
                   { label: "Rate (₹)" },
                   { label: "Amount (₹)" },
+                  { label: "Action" },
                 ].map((h, i) => (
                   <th key={i} className={TH}>
                     <div className="flex items-center justify-center gap-1">
@@ -829,15 +802,36 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
                             AM
                           </span>
                         </td>
-                        <td className={TD}>{day.AM.ltrs.toFixed(2)}</td>
-                        <td className={TD}>{day.AM.fat.toFixed(2)}</td>
-                        <td className={TD}>{day.AM.snf.toFixed(2)}</td>
-                        <td className={TD}>₹{day.AM.rate.toFixed(2)}</td>
-                        <td
-                          className={`${TD} font-black text-[#111] text-right pr-4`}
-                        >
-                          ₹{day.AM.amount.toFixed(2)}
-                        </td>
+                        {editingEntry === (day.AM._id || day.AM.id) ? (
+                          <>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.ltrs} onChange={(e) => setEditForm({...editForm, ltrs: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.fat} onChange={(e) => setEditForm({...editForm, fat: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.snf} onChange={(e) => setEditForm({...editForm, snf: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.rate} onChange={(e) => setEditForm({...editForm, rate: e.target.value})} /></td>
+                            <td className={`${TD} font-black text-[#111] text-right pr-4`}>
+                              ₹{day.AM.amount.toFixed(2)}
+                            </td>
+                            <td className={`${TD} flex gap-3 justify-center items-center`}>
+                              <button onClick={handleSaveEdit} disabled={isUpdating} className="text-green-600 hover:scale-110 transition-transform"><Check size={14} /></button>
+                              <button onClick={handleCancelEdit} disabled={isUpdating} className="text-red-600 hover:scale-110 transition-transform"><X size={14} /></button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className={TD}>{day.AM.ltrs.toFixed(2)}</td>
+                            <td className={TD}>{day.AM.fat.toFixed(2)}</td>
+                            <td className={TD}>{day.AM.snf.toFixed(2)}</td>
+                            <td className={TD}>₹{day.AM.rate.toFixed(2)}</td>
+                            <td className={`${TD} font-black text-[#111] text-right pr-4`}>
+                              ₹{day.AM.amount.toFixed(2)}
+                            </td>
+                            <td className={`${TD} text-center`}>
+                              <button onClick={() => handleEditClick(day.AM)} className="text-[#aaa] hover:text-[#111] transition-colors">
+                                <Edit2 size={12} />
+                              </button>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     )}
                     {day.PM && (
@@ -856,15 +850,36 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
                             PM
                           </span>
                         </td>
-                        <td className={TD}>{day.PM.ltrs.toFixed(2)}</td>
-                        <td className={TD}>{day.PM.fat.toFixed(2)}</td>
-                        <td className={TD}>{day.PM.snf.toFixed(2)}</td>
-                        <td className={TD}>₹{day.PM.rate.toFixed(2)}</td>
-                        <td
-                          className={`${TD} font-black text-[#111] text-right pr-4`}
-                        >
-                          ₹{day.PM.amount.toFixed(2)}
-                        </td>
+                        {editingEntry === (day.PM._id || day.PM.id) ? (
+                          <>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.ltrs} onChange={(e) => setEditForm({...editForm, ltrs: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.fat} onChange={(e) => setEditForm({...editForm, fat: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.snf} onChange={(e) => setEditForm({...editForm, snf: e.target.value})} /></td>
+                            <td className={TD}><input type="number" className="w-16 border rounded px-1.5 py-0.5" value={editForm.rate} onChange={(e) => setEditForm({...editForm, rate: e.target.value})} /></td>
+                            <td className={`${TD} font-black text-[#111] text-right pr-4`}>
+                              ₹{day.PM.amount.toFixed(2)}
+                            </td>
+                            <td className={`${TD} flex gap-3 justify-center items-center`}>
+                              <button onClick={handleSaveEdit} disabled={isUpdating} className="text-green-600 hover:scale-110 transition-transform"><Check size={14} /></button>
+                              <button onClick={handleCancelEdit} disabled={isUpdating} className="text-red-600 hover:scale-110 transition-transform"><X size={14} /></button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className={TD}>{day.PM.ltrs.toFixed(2)}</td>
+                            <td className={TD}>{day.PM.fat.toFixed(2)}</td>
+                            <td className={TD}>{day.PM.snf.toFixed(2)}</td>
+                            <td className={TD}>₹{day.PM.rate.toFixed(2)}</td>
+                            <td className={`${TD} font-black text-[#111] text-right pr-4`}>
+                              ₹{day.PM.amount.toFixed(2)}
+                            </td>
+                            <td className={`${TD} text-center`}>
+                              <button onClick={() => handleEditClick(day.PM)} className="text-[#aaa] hover:text-[#111] transition-colors">
+                                <Edit2 size={12} />
+                              </button>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     )}
                   </React.Fragment>
@@ -909,28 +924,7 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
               PDF
             </button>
 
-            <button
-              onClick={handleMarkPaid}
-              disabled={
-                allPaid ||
-                totalAmount === 0 ||
-                isMarkingPaid ||
-                !selectedClient ||
-                isFetchingLedger
-              }
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-[10px] font-mono font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
-                allPaid
-                  ? "bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]"
-                  : "bg-[#111] hover:bg-[#222] text-white border border-[#111]"
-              }`}
-            >
-              {isMarkingPaid ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : (
-                <CheckCircle2 size={13} />
-              )}
-              {allPaid ? "Paid" : "Mark Paid"}
-            </button>
+
 
             <button
               onClick={handleWhatsAppShare}

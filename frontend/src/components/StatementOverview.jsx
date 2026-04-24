@@ -22,20 +22,16 @@ const StatementOverview = ({ selectedClient, entries }) => {
   );
   const lifetimeVolume = clientEntries.reduce((s, e) => s + (e.ltrs || 0), 0);
   const lifetimeAmount = clientEntries.reduce((s, e) => s + (e.amount || 0), 0);
-  const paidAmount = clientEntries
-    .filter((e) => e.paid)
-    .reduce((s, e) => s + (e.amount || 0), 0);
-  const pendingAmount = lifetimeAmount - paidAmount;
 
   const filteredEntries = clientEntries
     .filter((e) => (!from || e.date >= from) && (!to || e.date <= to))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const downloadCSV = () => {
-    const rows = ["Date,Shift,Liters,Fat%,SNF%,Rate,Amount,Status"];
+    const rows = ["Date,Shift,Liters,Fat%,SNF%,Rate,Amount"];
     filteredEntries.forEach((r) =>
       rows.push(
-        `${r.date},${r.shift},${r.ltrs},${r.fat},${r.snf},${r.rate},${r.amount},${r.paid ? "Paid" : "Pending"}`,
+        `${r.date},${r.shift},${r.ltrs},${r.fat},${r.snf},${r.rate},${r.amount}`,
       ),
     );
     const link = document.createElement("a");
@@ -68,7 +64,7 @@ const StatementOverview = ({ selectedClient, entries }) => {
       autoTable(doc, {
         startY: from || to ? 40 : 36,
         head: [
-          ["Date", "Shift", "Ltrs", "Fat%", "SNF%", "Rate", "Amount", "Status"],
+          ["Date", "Shift", "Ltrs", "Fat%", "SNF%", "Rate", "Amount"],
         ],
         body: filteredEntries.map((e) => [
           e.date,
@@ -78,7 +74,6 @@ const StatementOverview = ({ selectedClient, entries }) => {
           e.snf.toFixed(1),
           `₹${e.rate}`,
           `₹${e.amount.toFixed(2)}`,
-          e.paid ? "Paid" : "Pending",
         ]),
         theme: "striped",
         headStyles: {
@@ -195,20 +190,6 @@ const StatementOverview = ({ selectedClient, entries }) => {
           ))}
         </div>
 
-        {pendingAmount > 0 && (
-          <div
-            className="relative z-10 mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px]"
-            style={{
-              background: "rgba(153,27,27,0.3)",
-              border: "1px solid rgba(253,202,202,0.15)",
-            }}
-          >
-            <Clock size={9} color="#FCA5A5" />
-            <span className="text-[9px] font-black text-red-300">
-              ₹{pendingAmount.toFixed(0)} pending
-            </span>
-          </div>
-        )}
       </motion.div>
 
       {/* Full Ledger Modal */}
@@ -296,7 +277,7 @@ const StatementOverview = ({ selectedClient, entries }) => {
               </div>
 
               {/* Summary Strip */}
-              <div className="grid grid-cols-3 divide-x divide-[#F5F0E8] shrink-0 border-b border-[#F5F0E8]">
+              <div className="grid grid-cols-2 divide-x divide-[#F5F0E8] shrink-0 border-b border-[#F5F0E8]">
                 {[
                   {
                     label: "Total Volume",
@@ -309,12 +290,6 @@ const StatementOverview = ({ selectedClient, entries }) => {
                     value: `₹${lifetimeAmount.toFixed(0)}`,
                     color: "#C8891C",
                     icon: IndianRupee,
-                  },
-                  {
-                    label: "Outstanding",
-                    value: `₹${pendingAmount.toFixed(0)}`,
-                    color: pendingAmount > 0 ? "#991B1B" : "#166B4D",
-                    icon: pendingAmount > 0 ? Clock : CheckCircle2,
                   },
                 ].map((stat) => (
                   <div
@@ -350,7 +325,6 @@ const StatementOverview = ({ selectedClient, entries }) => {
                         "SNF%",
                         "Rate",
                         "Amount",
-                        "Status",
                       ].map((h) => (
                         <th
                           key={h}
@@ -365,7 +339,7 @@ const StatementOverview = ({ selectedClient, entries }) => {
                     {filteredEntries.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={7}
                           className="text-center py-16 text-[13px] text-[#8A9BB0] font-medium"
                         >
                           No records found.
@@ -404,23 +378,6 @@ const StatementOverview = ({ selectedClient, entries }) => {
                           </td>
                           <td className="px-3 sm:px-4 py-2 font-mono font-black text-[12px] sm:text-[13px] text-[#0D1B2A]">
                             ₹{e.amount.toFixed(0)}
-                          </td>
-                          <td className="px-3 sm:px-4 py-2">
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[7px] text-[9px] font-black uppercase tracking-wide"
-                              style={{
-                                background: e.paid ? "#F0F7F3" : "#FEF2F2",
-                                color: e.paid ? "#166B4D" : "#991B1B",
-                                border: `1px solid ${e.paid ? "#B5DDCA" : "#FECACA"}`,
-                              }}
-                            >
-                              {e.paid ? (
-                                <CheckCircle2 size={8} />
-                              ) : (
-                                <Clock size={8} />
-                              )}
-                              {e.paid ? "Paid" : "Pending"}
-                            </span>
                           </td>
                         </tr>
                       ))

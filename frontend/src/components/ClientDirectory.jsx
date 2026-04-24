@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Loader2,
   Droplets,
+  Trash2,
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 
@@ -25,6 +26,20 @@ const ClientDirectory = ({ clients = [], setClients, entries = [] }) => {
   const [isImporting, setIsImporting] = useState(false);
   const [sortBy, setSortBy] = useState("name");
   const fileRef = useRef(null);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this client? All associated entries will be permanently removed.")) return;
+    try {
+      const res = await axios.delete(`/api/owner/clients/${id}`);
+      if (res.data.success) {
+        setClients(prev => prev.filter(c => (c.id || c._id) !== id));
+        toast.success("Client deleted successfully.");
+        setExpandedId(null);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete client.");
+    }
+  };
 
   const stats = (clientId) => {
     const ce = entries.filter((e) => (e.clientId || e.farmerId) === clientId);
@@ -136,12 +151,12 @@ const ClientDirectory = ({ clients = [], setClients, entries = [] }) => {
 
   const exportCSV = () => {
     const rows = [
-      "ID,Name,Phone,WhatsApp,Address,Volume (L),Revenue (₹),Pending (₹)",
+      "ID,Name,Phone,WhatsApp,Address,Volume (L),Revenue (₹)",
     ];
     clients.forEach((c) => {
       const s = stats(c.id);
       rows.push(
-        `${c.serialId || ""},${c.name || ""},${c.phone || ""},${c.whatsapp || ""},${c.address || ""},${s.volume.toFixed(1)},${s.revenue.toFixed(0)},${s.pending.toFixed(0)}`,
+        `${c.serialId || ""},${c.name || ""},${c.phone || ""},${c.whatsapp || ""},${c.address || ""},${s.volume.toFixed(1)},${s.revenue.toFixed(0)}`,
       );
     });
     const link = document.createElement("a");
@@ -329,11 +344,6 @@ const ClientDirectory = ({ clients = [], setClients, entries = [] }) => {
                         <div className="text-[9px] text-[#8A9BB0]">
                           {s.volume.toFixed(1)}L · {s.sessions} entries
                         </div>
-                        {s.pending > 0 && (
-                          <div className="text-[9px] text-red-500 font-black">
-                            ₹{s.pending.toFixed(0)} due
-                          </div>
-                        )}
                       </td>
                       <td className="px-3 sm:px-4 py-3">
                         <button
@@ -360,8 +370,15 @@ const ClientDirectory = ({ clients = [], setClients, entries = [] }) => {
                           exit={{ opacity: 0 }}
                         >
                           <td colSpan={5} className="px-4 pb-3 pt-1">
-                            <div className="bg-[#0D1B2A] rounded-[14px] p-4 text-white">
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div className="bg-[#0D1B2A] rounded-[14px] p-4 text-white relative">
+                              <button
+                                onClick={() => handleDelete(cId)}
+                                className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors"
+                              >
+                                <Trash2 size={12} />
+                                Delete
+                              </button>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pr-24">
                                 {[
                                   {
                                     label: "Account No.",

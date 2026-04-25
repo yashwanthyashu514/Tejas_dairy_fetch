@@ -101,22 +101,21 @@ export const createClient = async (req, res) => {
     }
 
     // Generate sequential serial ID (e.g., TD-3331)
-    // 1. Find the client with the highest numeric serialId with prefix TD-
-    const lastClient = await ClientModel.findOne({
-      serialId: { $regex: /^TD-\d+$/ }, 
-    }).sort({ serialId: -1 });
+    // We use a more robust numeric search to avoid lexicographical sort issues (e.g., TD-999 > TD-1000)
+    const allTdClients = await ClientModel.find({
+      serialId: { $regex: /^TD-\d+$/ },
+    }, "serialId").lean();
 
-    // 2. Determine the next number (starts from 3331)
-    let nextNumber = 3331;
-    if (lastClient && lastClient.serialId) {
-      const lastNumber = parseInt(lastClient.serialId.replace("TD-", ""), 10);
-      if (!isNaN(lastNumber)) {
-        nextNumber = Math.max(3331, lastNumber + 1);
+    let maxNumber = 3330; // Start sequence before 3331
+    allTdClients.forEach(c => {
+      const num = parseInt(c.serialId.replace("TD-", ""), 10);
+      if (!isNaN(num) && num > maxNumber) {
+        maxNumber = num;
       }
-    }
+    });
 
-    // 3. Format it with leading zeros (at least 4 digits)
-    const serialId = `TD-${String(nextNumber).padStart(4, "0")}`;
+    const nextNumber = maxNumber + 1;
+    const serialId = `TD-${nextNumber}`; // No extra padding needed if we want literal TD-3331 and so on
 
     const client = await ClientModel.create({
       serialId,

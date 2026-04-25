@@ -31,7 +31,7 @@ app.use(
 // FIX: Combined default URLs into one comma-separated string
 const ALLOWED_ORIGINS = (
   process.env.ALLOWED_ORIGINS ||
-  "https://tejas-dairy.vercel.app,http://localhost:5173"
+  "https://tejas-dairy-fetch.vercel.app,http://localhost:5173"
 )
   .split(",")
   .map((o) => o.trim());

@@ -651,15 +651,6 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
     }
 
     const fileName = `TejasDairy_Bill_${(selectedClient.name || "Client").replace(/\s+/g, "_")}_${from}.pdf`;
-    
-    // Download the PDF directly so they can attach it manually
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(result.blob);
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
     const msg = buildWhatsAppMsg(
       selectedClient,
       from,
@@ -672,17 +663,43 @@ const PaymentBilling = ({ selectedClient, entries, setEntries }) => {
       invoiceNo,
     );
 
+    // Create file object for sharing
+    const file = new File([result.blob], fileName, { type: "application/pdf" });
+
+    // 🚀 STEP 1: Try Web Share API (Best for Mobile - Sends PDF + Text together)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `Tejas Dairy Bill - ${selectedClient.name}`,
+          text: msg,
+        });
+        setIsWhatsApping(false);
+        return; // Success!
+      } catch (err) {
+        // Fallback if user cancels or share fails
+        console.warn("Web Share failed, falling back to manual:", err);
+      }
+    }
+
+    // 🚀 STEP 2: Fallback for Desktop (Download PDF + Open WhatsApp Link)
+    // Download the PDF
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(result.blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
     toast.success(
-      "Opening WhatsApp chat directly! Please attach the downloaded PDF manually.",
-      { duration: 5000 },
+      "Bill downloaded! Opening WhatsApp. Please attach the file manually on Desktop.",
+      { duration: 6000 },
     );
 
-    // Open WhatsApp directly to their specific contact chat box
+    // Open WhatsApp directly
     setTimeout(() => {
-      window.open(
-        `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-        "_blank",
-      );
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, "_blank");
       setIsWhatsApping(false);
     }, 1200);
   };

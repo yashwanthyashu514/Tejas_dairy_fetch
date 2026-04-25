@@ -149,31 +149,13 @@ export const createClient = async (req, res) => {
 };
 export const getAllClients = async (req, res) => {
   try {
-    const { page = 1, limit = 200, search } = req.query;
-    const query = search
-      ? {
-          $or: [
-            { name: new RegExp(search, "i") },
-            { phone: new RegExp(search, "i") },
-            { serialId: new RegExp(search, "i") },
-          ],
-        }
-      : {};
-
-    const clients = await ClientModel.find(query)
-      .sort({ createdAt: -1 })
-      .skip((parseInt(page) - 1) * parseInt(limit))
-      .limit(parseInt(limit))
-      .lean();
-
-    return res
-      .status(200)
-      .json({ success: true, count: clients.length, data: clients });
+    console.log("[API] Fetching all clients...");
+    const clients = await ClientModel.find({}).sort({ createdAt: -1 }).lean();
+    console.log(`[API] Found ${clients.length} clients.`);
+    return res.status(200).json({ success: true, count: clients.length, data: clients });
   } catch (err) {
-    console.error("[getAllClients]", err.message);
-    return res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch clients." });
+    console.error("[getAllClients] Error:", err.message);
+    return res.status(500).json({ success: false, message: "Failed to fetch clients." });
   }
 };
 

@@ -70,17 +70,21 @@ const App = () => {
     if (!userToken) return;
     setIsFetching(true);
     try {
+      console.log("[App] Syncing dashboard data...");
       const [clientsRes, entriesRes] = await Promise.all([
         axios.get("/api/owner/clients"),
         axios.get("/api/owner/entries"),
       ]);
 
-      if (clientsRes.data.success) {
+      console.log("[App] Clients received:", clientsRes.data.data?.length || 0);
+      console.log("[App] Entries received:", entriesRes.data.data?.length || 0);
+
+      if (clientsRes.data.success && Array.isArray(clientsRes.data.data)) {
         setClients(
           clientsRes.data.data.map((c) => ({ ...c, id: c._id || c.id })),
         );
       }
-      if (entriesRes.data.success) {
+      if (entriesRes.data.success && Array.isArray(entriesRes.data.data)) {
         setEntries(
           entriesRes.data.data.map((e) => ({
             ...e,
@@ -91,6 +95,7 @@ const App = () => {
       }
       setLastSync(new Date());
     } catch (err) {
+      console.error("[App] Fetch Error:", err);
       if (isOnline && err.response?.status !== 401) {
         toast.error("Failed to sync data.");
       }
